@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>62進数変換ツール</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      resize: none;
+      word-wrap: break-word;
+    }
+    button {
+      margin-top: 10px;
+    }
+    #input-mode {
+      margin-bottom: 10px;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <h1>62進数変換ツール</h1>
+
+  <div id="input-mode">
+    <label><input type="radio" name="inputMode" value="text" checked>テキスト</label>
+    <label><input type="radio" name="inputMode" value="number">数値</label>
+  </div>
+
+  <div class="container">
+    <div class="box">
+      <h2>変換前</h2>
+      <textarea id="inputText" placeholder="ここにテキストを入力すると、"></textarea>
+      <button onclick="copyToClipboard('inputText')">コピー</button>
+    </div>
+    <div class="box">
+      <h2>変換後</h2>
+      <textarea id="base62Text" placeholder="ここに62進数が出力されます(逆変換もOK)。"></textarea>
+      <button onclick="copyToClipboard('base62Text')">コピー</button>
+    </div>
+  </div>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const base62Text = document.getElementById('base62Text');
+    const inputModes = document.getElementsByName('inputMode');
+
+    const base62Chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+    let currentMode = 'text';
+
+    function updateInputMode() {
+      currentMode = Array.from(inputModes).find(radio => radio.checked).value;
+      base62Text.value = toBase62(inputText.value);
+    }
+
+    inputModes.forEach(radio => radio.addEventListener('change', updateInputMode));
+
+    function toBase62(input) {
+      if (currentMode === 'text') {
+        const bytes = new TextEncoder().encode(input);
+        return bytesToBase62(bytes);
+      } else if (currentMode === 'number') {
+        const filteredInput = input.replace(/[^0-9]/g, '');
+        const number = parseInt(filteredInput, 10);
+        return numberToBase62(number);
+      }
+    }
+
+    function fromBase62(base62) {
+      const bytes = base62ToBytes(base62);
+      if (currentMode === 'text') {
+        return new TextDecoder().decode(new Uint8Array(bytes));
+      } else if (currentMode === 'number') {
+        return bytesToNumber(bytes).toString();
+      }
+    }
+
+    function bytesToBase62(bytes) {
+      let base62 = '';
+      bytes.forEach(byte => {
+        base62 += base62Chars[Math.floor(byte / 62)];
+        base62 += base62Chars[byte % 62];
+      });
+      return base62;
+    }
+
+    function base62ToBytes(base62) {
+      const filteredInput = base62.replace(/[^0-9A-Za-z]/g, '');
+      let bytes = [];
+      for (let i = 0; i < filteredInput.length; i += 2) {
+        const high = base62Chars.indexOf(filteredInput[i]) * 62;
+        const low = base62Chars.indexOf(filteredInput[i + 1] || '0');
+        bytes.push(high + low);
+      }
+      return bytes;
+    }
+
+    function numberToBase62(number) {
+      let base62 = '';
+      while (number > 0) {
+        base62 = base62Chars[number % 62] + base62;
+        number = Math.floor(number / 62);
+      }
+      return base62;
+    }
+
+    function bytesToNumber(bytes) {
+      return bytes.reduce((acc, byte) => acc * 256 + byte, 0);
+    }
+
+    inputText.addEventListener('input', () => {
+      base62Text.value = toBase62(inputText.value);
+    });
+
+    base62Text.addEventListener('input', () => {
+      const filteredInput = base62Text.value.replace(/[^0-9A-Za-z]/g, '');
+      base62Text.value = filteredInput;
+      inputText.value = fromBase62(filteredInput);
+    });
+
+    function copyToClipboard(id) {
+      const text = document.getElementById(id);
+      text.select();
+      text.setSelectionRange(0, 99999); // For mobile devices
+      document.execCommand('copy');
+    }
+  </script>
+</body>
+</html>
