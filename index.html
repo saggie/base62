@@ -61,6 +61,9 @@
 
     const base62Chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
+    const filterBase62 = value => value.replace(/[^0-9A-Za-z]/g, '');
+    const filterNumber = value => value.replace(/[^0-9]/g, '');
+
     let currentMode = 'text';
 
     function updateInputMode() {
@@ -75,23 +78,11 @@
         const bytes = new TextEncoder().encode(input);
         return bytesToBase62(bytes);
       } else if (currentMode === 'number') {
-        const filteredInput = input.replace(/[^0-9]/g, '');
+        const filteredInput = filterNumber(input);
         if (filteredInput === '') return '';
 
         const number = BigInt(filteredInput);
         return numberToBase62(number);
-      }
-    }
-
-    function fromBase62(base62) {
-      base62 = base62.replace(/[^0-9A-Za-z]/g, '');
-      if (base62 === '') return '';
-
-      if (currentMode === 'text') {
-        const bytes = base62ToBytes(base62);
-        return new TextDecoder().decode(new Uint8Array(bytes));
-      } else if (currentMode === 'number') {
-        return base62ToNumber(base62).toString();
       }
     }
 
@@ -104,6 +95,27 @@
       return base62;
     }
 
+    function numberToBase62(number) {
+      let base62 = '';
+      while (number > 0n) {
+        base62 = base62Chars[number % 62n] + base62;
+        number = number / 62n;
+      }
+      return base62 || '0';
+    }
+
+    function fromBase62(base62) {
+      base62 = filterBase62(base62);
+      if (base62 === '') return '';
+
+      if (currentMode === 'text') {
+        const bytes = base62ToBytes(base62);
+        return new TextDecoder().decode(new Uint8Array(bytes));
+      } else if (currentMode === 'number') {
+        return base62ToNumber(base62).toString();
+      }
+    }
+
     function base62ToBytes(base62) {
       let bytes = [];
       for (let i = 0; i < base62.length; i += 2) {
@@ -112,15 +124,6 @@
         bytes.push(high + low);
       }
       return bytes;
-    }
-
-    function numberToBase62(number) {
-      let base62 = '';
-      while (number > 0n) {
-        base62 = base62Chars[number % 62n] + base62;
-        number = number / 62n;
-      }
-      return base62 || '0';
     }
 
     function base62ToNumber(base62) {
@@ -133,11 +136,14 @@
     }
 
     inputText.addEventListener('input', () => {
+      if (currentMode === 'number') {
+        inputText.value = filterNumber(inputText.value);
+      }
       base62Text.value = toBase62(inputText.value);
     });
 
     base62Text.addEventListener('input', () => {
-      const filteredInput = base62Text.value.replace(/[^0-9A-Za-z]/g, '');
+      const filteredInput = filterBase62(base62Text.value);
       base62Text.value = filteredInput;
       inputText.value = fromBase62(filteredInput);
     });
