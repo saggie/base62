@@ -65,7 +65,7 @@
 
     function updateInputMode() {
       currentMode = Array.from(inputModes).find(radio => radio.checked).value;
-      base62Text.value = toBase62(inputText.value);
+      inputText.value = fromBase62(base62Text.value);
     }
 
     inputModes.forEach(radio => radio.addEventListener('change', updateInputMode));
