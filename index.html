@@ -87,6 +87,13 @@
           <svg><use xlink:href="#copy-icon"></use></svg>
         </button>
       </div>
+      <label for="inputBase64">Base64</label>
+      <div class="input-group">
+        <input type="text" id="inputBase64" placeholder="ここにBase64が出力されます">
+        <button onclick="copyToClipboard('inputBase64', this)">
+          <svg><use xlink:href="#copy-icon"></use></svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -112,16 +119,19 @@
     const inputDec = document.getElementById('inputDec');
     const inputHex = document.getElementById('inputHex');
     const inputBase62 = document.getElementById('inputBase62');
+    const inputBase64 = document.getElementById('inputBase64');
 
     const filterNumber = value => value.replace(/[^0-9]/g, '');
     const filterHex = value => value.replace(/[^0-9A-Fa-f]/g, '');
     const filterBase62 = value => value.replace(/[^0-9A-Za-z]/g, '');
+    const filterBase64 = value => value.replace(/[^0-9A-Za-z+/=]/g, '');
 
     const clearValues = () => {
       inputText.value = '';
       inputDec.value = '';
       inputHex.value = '';
       inputBase62.value = '';
+      inputBase64.value = '';
     };
 
     inputText.addEventListener('input', () => {
@@ -137,6 +147,7 @@
       inputDec.value = number.toString();
       inputHex.value = number.toString(16).toUpperCase();
       inputBase62.value = base62;
+      inputBase64.value = btoa(unescape(encodeURIComponent(text)));
     });
 
     inputDec.addEventListener('input', () => {
@@ -149,11 +160,13 @@
 
       const number = BigInt(decInput);
       const base62 = numberToBase62(number);
+      const text = base62ToText(base62);
 
-      inputText.value = base62ToText(base62);
+      inputText.value = text;
       inputDec.value = decInput;
       inputHex.value = number.toString(16).toUpperCase();
       inputBase62.value = base62;
+      inputBase64.value = btoa(unescape(encodeURIComponent(text)));
     });
 
     inputHex.addEventListener('input', () => {
@@ -165,11 +178,13 @@
 
       const number = BigInt('0x' + hexInput);
       const base62 = numberToBase62(number);
+      const text = base62ToText(base62);
 
-      inputText.value = base62ToText(base62);
+      inputText.value =text;
       inputDec.value = number.toString();
       inputHex.value = hexInput;
       inputBase62.value = base62;
+      inputBase64.value = btoa(unescape(encodeURIComponent(text)));
     });
 
     inputBase62.addEventListener('input', () => {
@@ -180,11 +195,31 @@
       }
 
       const number = base62ToNumber(base62);
+      const text = base62ToText(base62);
 
-      inputText.value = base62ToText(base62);
+      inputText.value = text;
       inputDec.value = number.toString();
       inputHex.value = number.toString(16).toUpperCase();
       inputBase62.value = base62;
+      inputBase64.value = btoa(unescape(encodeURIComponent(text)));
+    });
+
+    inputBase64.addEventListener('input', () => {
+      const base64 = filterBase64(inputBase64.value);
+      if (base64 === '') {
+        clearValues();
+        return;
+      }
+
+      const text = decodeURIComponent(escape(atob(base64)));
+      const base62 = textToBase62(text);
+      const number = base62ToNumber(base62);
+
+      inputText.value = text;
+      inputDec.value = number.toString();
+      inputHex.value = number.toString(16).toUpperCase();
+      inputBase62.value = base62;
+      inputBase64.value = base64;
     });
 
     function textToBase62(text) {
