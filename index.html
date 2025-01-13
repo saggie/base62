@@ -59,7 +59,6 @@
 
   <div class="container">
     <div class="box">
-      <h2>変換前</h2>
       <label for="inputText">テキスト</label>
       <div class="input-group">
         <input type="text" id="inputText" placeholder="ここにテキストを入力">
@@ -67,20 +66,24 @@
           <svg><use xlink:href="#copy-icon"></use></svg>
         </button>
       </div>
-      <label for="inputNumber">10進数</label>
+      <label for="inputDec">10進数</label>
       <div class="input-group">
-        <input type="text" id="inputNumber" placeholder="ここに数値を入力">
-        <button onclick="copyToClipboard('inputNumber', this)">
+        <input type="text" id="inputDec" placeholder="ここに10進数を入力">
+        <button onclick="copyToClipboard('inputDec', this)">
           <svg><use xlink:href="#copy-icon"></use></svg>
         </button>
       </div>
-    </div>
-    <div class="box">
-      <h2>変換後</h2>
-      <label for="inputNumber">62進数</label>
+      <label for="inputHex">16進数</label>
       <div class="input-group">
-        <input type="text" id="base62Text" placeholder="ここに62進数が出力されます">
-        <button onclick="copyToClipboard('base62Text', this)">
+        <input type="text" id="inputHex" placeholder="ここに16進数を入力">
+        <button onclick="copyToClipboard('inputHex', this)">
+          <svg><use xlink:href="#copy-icon"></use></svg>
+        </button>
+      </div>
+      <b><label for="inputBase62">62進数</label></b>
+      <div class="input-group">
+        <input type="text" id="inputBase62" placeholder="ここに62進数が出力されます">
+        <button onclick="copyToClipboard('inputBase62', this)">
           <svg><use xlink:href="#copy-icon"></use></svg>
         </button>
       </div>
@@ -103,42 +106,91 @@
   </svg>
 
   <script>
-    const inputText = document.getElementById('inputText');
-    const inputNumber = document.getElementById('inputNumber');
-    const base62Text = document.getElementById('base62Text');
-
     const base62Chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
-    const filterBase62 = value => value.replace(/[^0-9A-Za-z]/g, '');
+    const inputText = document.getElementById('inputText');
+    const inputDec = document.getElementById('inputDec');
+    const inputHex = document.getElementById('inputHex');
+    const inputBase62 = document.getElementById('inputBase62');
+
     const filterNumber = value => value.replace(/[^0-9]/g, '');
+    const filterHex = value => value.replace(/[^0-9A-Fa-f]/g, '');
+    const filterBase62 = value => value.replace(/[^0-9A-Za-z]/g, '');
+
+    const clearValues = () => {
+      inputText.value = '';
+      inputDec.value = '';
+      inputHex.value = '';
+      inputBase62.value = '';
+    };
 
     inputText.addEventListener('input', () => {
       const text = inputText.value;
-      const bytes = new TextEncoder().encode(text);
-      const base62 = bytesToBase62(bytes);
-      base62Text.value = base62;
-      inputNumber.value = base62ToNumber(base62).toString();
-    });
-
-    inputNumber.addEventListener('input', () => {
-      const numberInput = filterNumber(inputNumber.value);
-      inputNumber.value = numberInput;
-      if (numberInput === '') {
-        base62Text.value = '';
-        inputText.value = '';
+      if (text === '') {
+        clearValues();
         return;
       }
-      const base62 = numberToBase62(BigInt(numberInput));
-      base62Text.value = base62;
-      inputText.value = new TextDecoder().decode(new Uint8Array(base62ToBytes(base62)));
+
+      const base62 = textToBase62(text);
+      const number = base62ToNumber(base62);
+
+      inputDec.value = number.toString();
+      inputHex.value = number.toString(16).toUpperCase();
+      inputBase62.value = base62;
     });
 
-    base62Text.addEventListener('input', () => {
-      const base62 = filterBase62(base62Text.value);
-      base62Text.value = base62;
-      inputText.value = new TextDecoder().decode(new Uint8Array(base62ToBytes(base62)));
-      inputNumber.value = base62ToNumber(base62).toString();
+    inputDec.addEventListener('input', () => {
+      const decInput = filterNumber(inputDec.value);
+
+      if (decInput === '') {
+        clearValues();
+        return;
+      }
+
+      const number = BigInt(decInput);
+      const base62 = numberToBase62(number);
+
+      inputText.value = base62ToText(base62);
+      inputDec.value = decInput;
+      inputHex.value = number.toString(16).toUpperCase();
+      inputBase62.value = base62;
     });
+
+    inputHex.addEventListener('input', () => {
+      const hexInput = filterHex(inputHex.value);
+      if (hexInput === '') {
+        clearValues();
+        return;
+      }
+
+      const number = BigInt('0x' + hexInput);
+      const base62 = numberToBase62(number);
+
+      inputText.value = base62ToText(base62);
+      inputDec.value = number.toString();
+      inputHex.value = hexInput;
+      inputBase62.value = base62;
+    });
+
+    inputBase62.addEventListener('input', () => {
+      const base62 = filterBase62(inputBase62.value);
+      if (base62 === '') {
+        clearValues();
+        return;
+      }
+
+      const number = base62ToNumber(base62);
+
+      inputText.value = base62ToText(base62);
+      inputDec.value = number.toString();
+      inputHex.value = number.toString(16).toUpperCase();
+      inputBase62.value = base62;
+    });
+
+    function textToBase62(text) {
+      const bytes = new TextEncoder().encode(text);
+      return bytesToBase62(bytes);
+    }
 
     function bytesToBase62(bytes) {
       let base62 = '';
@@ -156,6 +208,10 @@
         number = number / 62n;
       }
       return base62 || '0';
+    }
+
+    function base62ToText(base62) {
+      return new TextDecoder().decode(new Uint8Array(base62ToBytes(base62)));
     }
 
     function base62ToBytes(base62) {
