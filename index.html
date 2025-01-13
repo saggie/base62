@@ -76,17 +76,22 @@
         return bytesToBase62(bytes);
       } else if (currentMode === 'number') {
         const filteredInput = input.replace(/[^0-9]/g, '');
+        if (filteredInput === '') return '';
+
         const number = parseInt(filteredInput, 10);
         return numberToBase62(number);
       }
     }
 
     function fromBase62(base62) {
-      const bytes = base62ToBytes(base62);
+      base62 = base62.replace(/[^0-9A-Za-z]/g, '');
+      if (base62 === '') return '';
+
       if (currentMode === 'text') {
+        const bytes = base62ToBytes(base62);
         return new TextDecoder().decode(new Uint8Array(bytes));
       } else if (currentMode === 'number') {
-        return bytesToNumber(bytes).toString();
+        return base62ToNumber(base62).toString();
       }
     }
 
@@ -100,11 +105,10 @@
     }
 
     function base62ToBytes(base62) {
-      const filteredInput = base62.replace(/[^0-9A-Za-z]/g, '');
       let bytes = [];
-      for (let i = 0; i < filteredInput.length; i += 2) {
-        const high = base62Chars.indexOf(filteredInput[i]) * 62;
-        const low = base62Chars.indexOf(filteredInput[i + 1] || '0');
+      for (let i = 0; i < base62.length; i += 2) {
+        const high = base62Chars.indexOf(base62[i]) * 62;
+        const low = base62Chars.indexOf(base62[i + 1] || '0');
         bytes.push(high + low);
       }
       return bytes;
@@ -116,11 +120,16 @@
         base62 = base62Chars[number % 62] + base62;
         number = Math.floor(number / 62);
       }
-      return base62;
+      return base62 || '0';
     }
 
-    function bytesToNumber(bytes) {
-      return bytes.reduce((acc, byte) => acc * 256 + byte, 0);
+    function base62ToNumber(base62) {
+      let number = 0;
+      for (let i = 0; i < base62.length; i++) {
+        const value = base62Chars.indexOf(base62[i]);
+        number = number * 62 + value;
+      }
+      return number;
     }
 
     inputText.addEventListener('input', () => {
