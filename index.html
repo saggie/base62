@@ -78,7 +78,7 @@
         const filteredInput = input.replace(/[^0-9]/g, '');
         if (filteredInput === '') return '';
 
-        const number = parseInt(filteredInput, 10);
+        const number = BigInt(filteredInput);
         return numberToBase62(number);
       }
     }
@@ -116,20 +116,20 @@
 
     function numberToBase62(number) {
       let base62 = '';
-      while (number > 0) {
-        base62 = base62Chars[number % 62] + base62;
-        number = Math.floor(number / 62);
+      while (number > 0n) {
+        base62 = base62Chars[number % 62n] + base62;
+        number = number / 62n;
       }
       return base62 || '0';
     }
 
     function base62ToNumber(base62) {
-      let number = 0;
+      let number = 0n;
       for (let i = 0; i < base62.length; i++) {
-        const value = base62Chars.indexOf(base62[i]);
-        number = number * 62 + value;
+        const value = BigInt(base62Chars.indexOf(base62[i]));
+        number = number * 62n + value;
       }
-      return number;
+      return number.toString();
     }
 
     inputText.addEventListener('input', () => {
