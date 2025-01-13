@@ -44,9 +44,6 @@
       height: 20px;
       fill: #000;
     }
-    #input-mode {
-      margin-bottom: 20px;
-    }
     .container {
       display: flex;
       justify-content: space-between;
@@ -60,25 +57,29 @@
 <body>
   <h1>62進数変換ツール</h1>
 
-  <div id="input-mode">
-    <label><input type="radio" name="inputMode" value="text" checked>テキスト</label>
-    <label><input type="radio" name="inputMode" value="number">数値</label>
-  </div>
-
   <div class="container">
     <div class="box">
       <h2>変換前</h2>
+      <label for="inputText">テキスト</label>
       <div class="input-group">
-        <input type="text" id="inputText" placeholder="ここにテキストを入力すると、">
+        <input type="text" id="inputText" placeholder="ここにテキストを入力">
         <button onclick="copyToClipboard('inputText', this)">
+          <svg><use xlink:href="#copy-icon"></use></svg>
+        </button>
+      </div>
+      <label for="inputNumber">10進数</label>
+      <div class="input-group">
+        <input type="text" id="inputNumber" placeholder="ここに数値を入力">
+        <button onclick="copyToClipboard('inputNumber', this)">
           <svg><use xlink:href="#copy-icon"></use></svg>
         </button>
       </div>
     </div>
     <div class="box">
       <h2>変換後</h2>
+      <label for="inputNumber">62進数</label>
       <div class="input-group">
-        <input type="text" id="base62Text" placeholder="ここに62進数が出力されます(逆変換もOK)。">
+        <input type="text" id="base62Text" placeholder="ここに62進数が出力されます">
         <button onclick="copyToClipboard('base62Text', this)">
           <svg><use xlink:href="#copy-icon"></use></svg>
         </button>
@@ -103,35 +104,41 @@
 
   <script>
     const inputText = document.getElementById('inputText');
+    const inputNumber = document.getElementById('inputNumber');
     const base62Text = document.getElementById('base62Text');
-    const inputModes = document.getElementsByName('inputMode');
 
     const base62Chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
     const filterBase62 = value => value.replace(/[^0-9A-Za-z]/g, '');
     const filterNumber = value => value.replace(/[^0-9]/g, '');
 
-    let currentMode = 'text';
+    inputText.addEventListener('input', () => {
+      const text = inputText.value;
+      const bytes = new TextEncoder().encode(text);
+      const base62 = bytesToBase62(bytes);
+      base62Text.value = base62;
+      inputNumber.value = base62ToNumber(base62).toString();
+    });
 
-    function updateInputMode() {
-      currentMode = Array.from(inputModes).find(radio => radio.checked).value;
-      inputText.value = fromBase62(base62Text.value);
-    }
-
-    inputModes.forEach(radio => radio.addEventListener('change', updateInputMode));
-
-    function toBase62(input) {
-      if (currentMode === 'text') {
-        const bytes = new TextEncoder().encode(input);
-        return bytesToBase62(bytes);
-      } else if (currentMode === 'number') {
-        const filteredInput = filterNumber(input);
-        if (filteredInput === '') return '';
-
-        const number = BigInt(filteredInput);
-        return numberToBase62(number);
+    inputNumber.addEventListener('input', () => {
+      const numberInput = filterNumber(inputNumber.value);
+      inputNumber.value = numberInput;
+      if (numberInput === '') {
+        base62Text.value = '';
+        inputText.value = '';
+        return;
       }
-    }
+      const base62 = numberToBase62(BigInt(numberInput));
+      base62Text.value = base62;
+      inputText.value = new TextDecoder().decode(new Uint8Array(base62ToBytes(base62)));
+    });
+
+    base62Text.addEventListener('input', () => {
+      const base62 = filterBase62(base62Text.value);
+      base62Text.value = base62;
+      inputText.value = new TextDecoder().decode(new Uint8Array(base62ToBytes(base62)));
+      inputNumber.value = base62ToNumber(base62).toString();
+    });
 
     function bytesToBase62(bytes) {
       let base62 = '';
@@ -151,18 +158,6 @@
       return base62 || '0';
     }
 
-    function fromBase62(base62) {
-      base62 = filterBase62(base62);
-      if (base62 === '') return '';
-
-      if (currentMode === 'text') {
-        const bytes = base62ToBytes(base62);
-        return new TextDecoder().decode(new Uint8Array(bytes));
-      } else if (currentMode === 'number') {
-        return base62ToNumber(base62).toString();
-      }
-    }
-
     function base62ToBytes(base62) {
       let bytes = [];
       for (let i = 0; i < base62.length; i += 2) {
@@ -179,21 +174,8 @@
         const value = BigInt(base62Chars.indexOf(base62[i]));
         number = number * 62n + value;
       }
-      return number.toString();
+      return number;
     }
-
-    inputText.addEventListener('input', () => {
-      if (currentMode === 'number') {
-        inputText.value = filterNumber(inputText.value);
-      }
-      base62Text.value = toBase62(inputText.value);
-    });
-
-    base62Text.addEventListener('input', () => {
-      const filteredInput = filterBase62(base62Text.value);
-      base62Text.value = filteredInput;
-      inputText.value = fromBase62(filteredInput);
-    });
 
     function copyToClipboard(id, button) {
       const text = document.getElementById(id);
