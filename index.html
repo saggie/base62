@@ -9,11 +9,11 @@
       font-family: Arial, sans-serif;
       margin: 20px;
     }
-    textarea {
+    input[type="text"] {
       width: 100%;
-      height: 100px;
-      resize: none;
-      word-wrap: break-word;
+      height: 40px;
+      font-size: 16px;
+      padding: 5px;
     }
     button {
       margin-top: 10px;
@@ -44,12 +44,12 @@
   <div class="container">
     <div class="box">
       <h2>変換前</h2>
-      <textarea id="inputText" placeholder="ここにテキストを入力すると、"></textarea>
+      <input type="text" id="inputText" placeholder="ここにテキストを入力すると、">
       <button onclick="copyToClipboard('inputText')">コピー</button>
     </div>
     <div class="box">
       <h2>変換後</h2>
-      <textarea id="base62Text" placeholder="ここに62進数が出力されます(逆変換もOK)。"></textarea>
+      <input type="text" id="base62Text" placeholder="ここに62進数が出力されます(逆変換もOK)。">
       <button onclick="copyToClipboard('base62Text')">コピー</button>
     </div>
   </div>
