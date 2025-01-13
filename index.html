@@ -9,17 +9,43 @@
       font-family: Arial, sans-serif;
       margin: 20px;
     }
-    input[type="text"] {
-      width: 100%;
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .input-group input[type="text"] {
+      flex: 1;
       height: 40px;
       font-size: 16px;
-      padding: 5px;
+      padding: 5px 10px;
+      border: none;
+      outline: none;
     }
-    button {
-      margin-top: 10px;
+    .input-group button {
+      height: 50px;
+      width: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f9f9f9;
+      border: none;
+      border-left: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .input-group button:hover {
+      background-color: #e0e0e0;
+    }
+    .input-group button svg {
+      width: 20px;
+      height: 20px;
+      fill: #000;
     }
     #input-mode {
-      margin-bottom: 10px;
+      margin-bottom: 20px;
     }
     .container {
       display: flex;
@@ -28,8 +54,6 @@
     }
     .box {
       flex: 1;
-      display: flex;
-      flex-direction: column;
     }
   </style>
 </head>
@@ -44,15 +68,38 @@
   <div class="container">
     <div class="box">
       <h2>変換前</h2>
-      <input type="text" id="inputText" placeholder="ここにテキストを入力すると、">
-      <button onclick="copyToClipboard('inputText')">コピー</button>
+      <div class="input-group">
+        <input type="text" id="inputText" placeholder="ここにテキストを入力すると、">
+        <button onclick="copyToClipboard('inputText', this)">
+          <svg><use xlink:href="#copy-icon"></use></svg>
+        </button>
+      </div>
     </div>
     <div class="box">
       <h2>変換後</h2>
-      <input type="text" id="base62Text" placeholder="ここに62進数が出力されます(逆変換もOK)。">
-      <button onclick="copyToClipboard('base62Text')">コピー</button>
+      <div class="input-group">
+        <input type="text" id="base62Text" placeholder="ここに62進数が出力されます(逆変換もOK)。">
+        <button onclick="copyToClipboard('base62Text', this)">
+          <svg><use xlink:href="#copy-icon"></use></svg>
+        </button>
+      </div>
     </div>
   </div>
+
+  <svg style="display: none;">
+    <defs>
+      <!-- コピーアイコン -->
+      <symbol id="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+        <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+        <path d="M384 336l-192 0c-8.8 0-16-7.2-16-16l0-256c0-8.8 7.2-16 16-16l140.1 0L400 115.9 400 320c0 8.8-7.2 16-16 16zM192 384l192 0c35.3 0 64-28.7 64-64l0-204.1c0-12.7-5.1-24.9-14.1-33.9L366.1 14.1c-9-9-21.2-14.1-33.9-14.1L192 0c-35.3 0-64 28.7-64 64l0 256c0 35.3 28.7 64 64 64zM64 128c-35.3 0-64 28.7-64 64L0 448c0 35.3 28.7 64 64 64l192 0c35.3 0 64-28.7 64-64l0-32-48 0 0 32c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16l0-256c0-8.8 7.2-16 16-16l32 0 0-48-32 0z"/>
+      </symbol>
+      <!-- チェックアイコン -->
+      <symbol id="check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+        <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+        <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
+      </symbol>
+    </defs>
+  </svg>
 
   <script>
     const inputText = document.getElementById('inputText');
@@ -148,11 +195,20 @@
       inputText.value = fromBase62(filteredInput);
     });
 
-    function copyToClipboard(id) {
+    function copyToClipboard(id, button) {
       const text = document.getElementById(id);
       text.select();
       text.setSelectionRange(0, 99999); // For mobile devices
       document.execCommand('copy');
+
+      // アイコンをチェックアイコンに変更
+      const useElement = button.querySelector('use');
+      useElement.setAttribute('xlink:href', '#check-icon');
+
+      // すぐ元のコピーアイコンに戻す
+      setTimeout(() => {
+        useElement.setAttribute('xlink:href', '#copy-icon');
+      }, 500);
     }
   </script>
 </body>
